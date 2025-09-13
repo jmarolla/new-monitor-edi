@@ -17,7 +17,7 @@ st.markdown("""
 <style>
     /* Título principal */
     .main-title {
-        font-size: 80px;
+        font-size: 100px;
         font-weight: 700;
         text-align: center;
         margin-bottom: 24px;
