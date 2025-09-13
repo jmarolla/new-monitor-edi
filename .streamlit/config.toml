@@ -1,0 +1,8 @@
+# OPCIÓN A (recomendada): sin puerto, dejá que Cloud use el default (8501)
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
