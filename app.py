@@ -1,4 +1,3 @@
-import os
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, text
@@ -54,9 +53,7 @@ st.markdown("""
     .error-text { color: #ff4d4f; }
     .ok-text { color: #23c16b; }
 
-    /* Ocultar elementos de la UI */
-    [data-testid="stSidebar"] { display: none !important; }
-    [data-testid="collapsedControl"] { display: none !important; }
+    /* Ocultar el botón de mostrar/ocultar contraseña */
     button[aria-label="Show password text"],
     button[aria-label="Hide password text"] {
         display: none !important;
@@ -149,7 +146,7 @@ else:
                     st.session_state.authenticated = False
                     st.error(f'Error de conexión: {e}')
 
-    if not st.session_state.authenticated:
+    if not st.session_state.get('authenticated', False):
         st.info('Conéctate a la base de datos en la barra lateral para comenzar.')
         st.stop()
     else:
@@ -248,8 +245,9 @@ with c2:
 with c3:
     with st.container(border=True):
         m1, m2 = st.columns(2)
+        total_pages = max((total + page_size - 1) // page_size, 1)
         m1.metric('Total de registros (últimos 30 días)', total)
-        m2.metric('Página actual', f"{page} de {max((total + page_size - 1) // page_size, 1)}")
+        m2.metric('Página actual', f"{page} de {total_pages}")
         m3, m4 = st.columns(2)
         m3.metric('Registros en esta página', len(df))
         m4.metric('Plataforma filtrada', plataforma_sel)
@@ -278,7 +276,6 @@ else:
     display_df = df
 
 # Controles de navegación de página
-total_pages = max((total + page_size - 1) // page_size, 1)
 nav1, nav2, nav3 = st.columns([2, 2, 8])
 
 with nav1:
@@ -295,16 +292,21 @@ if not display_df.empty:
     display_df = display_df.rename(columns={"MotivoRechazo": "Respuesta"})
     display_df['FechaAlta'] = pd.to_datetime(display_df['FechaAlta']).dt.strftime('%Y-%m-%d %H:%M:%S')
 
-    def highlight_respuesta(row):
+    def highlight_rows(row):
+        """
+        Aplica estilo al color del texto de la fila basado en su estado.
+        Funciona bien en temas claros y oscuros.
+        """
         is_critical = crit_mask.loc[row.name] if row.name in crit_mask.index else False
+        style = ''
         if is_critical:
-            return ['background-color: #ff4d4f; color: white;'] * len(row)
+            style = 'color: #ff8080; font-weight: bold;'
         elif pd.notna(row['Respuesta']) and str(row['Respuesta']).strip():
-            return ['background-color: #eaffea;'] * len(row)
-        return [''] * len(row)
+            style = 'color: #55d180;'
+        return [style] * len(row)
 
     st.dataframe(
-        display_df[['Id', 'FechaAlta', 'Plataforma', 'CodEmpre', 'RazonSocial', 'CUIT', 'Respuesta']].style.apply(highlight_respuesta, axis=1),
+        display_df[['Id', 'FechaAlta', 'Plataforma', 'CodEmpre', 'RazonSocial', 'CUIT', 'Respuesta']].style.apply(highlight_rows, axis=1),
         use_container_width=True,
         hide_index=True
     )
@@ -321,7 +323,8 @@ if not display_df.empty:
     with st.container(border=True):
         left, right = st.columns([1, 2])
         with left:
-            job_id = st.selectbox('Selecciona un Job ID para ver sus parámetros:', options=list(display_df['Id']))
+            job_id_options = list(display_df['Id'])
+            job_id = st.selectbox('Selecciona un Job ID para ver sus parámetros:', options=job_id_options)
             st.info("El XML correspondiente al Job ID seleccionado se mostrará a la derecha.")
 
         with right:
