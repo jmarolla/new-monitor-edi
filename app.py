@@ -14,7 +14,7 @@ st.set_page_config(page_title='Publicación GS1 → EDI', layout='wide')
 st.markdown(
     """
     <div style="display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;">
-      <span style="font-size:26px;font-weight:800;">Publicación GS1 → EDI</span>
+      <span style="font-size:36px;font-weight:800;">Publicación GS1 → EDI</span>
     </div>
     """,
     unsafe_allow_html=True
