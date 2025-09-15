@@ -51,26 +51,22 @@ logo_gs1 = find_asset(LOGO_GS1_CANDIDATES)
 logo_edi = find_asset(LOGO_EDI_CANDIDATES)
 
 # ===== Logos + título centrado =====
-if logo_gs1 or logo_edi:
-    st.markdown(
-        f"""
-        <div style='display:flex;justify-content:center;align-items:center;gap:40px;margin:8px 0 12px 0;'>
-            {f"<img src='{logo_gs1}' style='height:80px;object-fit:contain;'/>" if logo_gs1 else ''}
-            <span style='font-size:36px;font-weight:800;'>Publicación GS1 → EDI</span>
-            {f"<img src='{logo_edi}' style='height:80px;object-fit:contain;'/>" if logo_edi else ''}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-else:
+left, center, right = st.columns([1,2,1])
+with left:
+    if logo_gs1:
+        st.image(logo_gs1, width=120)
+with center:
     st.markdown(
         """
-        <div style='display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;'>
-          <span style='font-size:36px;font-weight:800;'>Publicación GS1 → EDI</span>
+        <div style='display:flex;align-items:center;justify-content:center;height:80px;'>
+            <span style='font-size:36px;font-weight:800;'>Publicación GS1 → EDI</span>
         </div>
         """,
         unsafe_allow_html=True
     )
+with right:
+    if logo_edi:
+        st.image(logo_edi, width=120)
 
 # --- Contenedor para el semáforo (se llena más abajo) ---
 sem_container = st.container()
