@@ -14,46 +14,63 @@ st.set_page_config(page_title='Publicación GS1 → EDI', layout='wide')
 # ===== Utilidad para localizar assets (logos) =====
 from pathlib import Path
 
-ASSET_CANDIDATES = [
-    ".", "images", "static", "assets"
-]
-
-# Buscamos varias variantes de nombre por si el repo tiene guiones/espacios
-LOGO_GS1_NAMES = ["ICONOGS1.png", "iconogs1.png"]
-LOGO_EDI_NAMES = ["logo EDI.webp", "logo_EDI.webp", "logo-EDI.webp", "logo_edi.webp"]
+ROOT = Path(__file__).parent
+SEARCH_DIRS = [ROOT, ROOT/"images", ROOT/"assets", ROOT/"static", ROOT/".streamlit"/"static"]
 
 @st.cache_resource(show_spinner=False)
-def asset_path(possible_names):
-    for folder in ASSET_CANDIDATES:
-        for name in possible_names:
-            p = Path(folder) / name
-            if p.exists():
+def find_asset(patterns):
+    """Busca recursivamente el primer archivo que haga match con cualquiera de los patrones.
+    Acepta espacios/diferentes mayúsculas/minúsculas.
+    """
+    lowered = [p.lower() for p in patterns]
+    for base in SEARCH_DIRS:
+        if not base.exists():
+            continue
+        # rglob todos los archivos y comparamos por nombre en minúsculas
+        for p in base.rglob("*"):
+            if p.is_file() and p.name.lower() in lowered:
                 return str(p)
+        # fallback: coincidencia por 'empieza con'
+        for p in base.rglob("*"):
+            if not p.is_file():
+                continue
+            name = p.name.lower()
+            for token in lowered:
+                if token.replace(" ","") in name.replace(" ",""):
+                    return str(p)
     return None
 
-logo_gs1 = asset_path(LOGO_GS1_NAMES)
-logo_edi = asset_path(LOGO_EDI_NAMES)
+LOGO_GS1_CANDIDATES = [
+    "ICONOGS1.png", "iconogs1.png", "gs1.png", "gs1_logo.png", "logo_gs1.png"
+]
+LOGO_EDI_CANDIDATES = [
+    "logo EDI.webp", "logo_edi.webp", "logo-edi.webp", "edi.png", "edi.webp"
+]
+
+logo_gs1 = find_asset(LOGO_GS1_CANDIDATES)
+logo_edi = find_asset(LOGO_EDI_CANDIDATES)
 
 # ===== Logos + título centrado =====
-col1, col2, col3 = st.columns([1,2,1])
-with col1:
-    if logo_gs1:
-        st.image(logo_gs1, width=120)
-with col2:
+if logo_gs1 or logo_edi:
     st.markdown(
-        """
-        <div style=\"display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;\">
-          <span style=\"font-size:36px;font-weight:800;\">Publicación GS1 → EDI</span>
+        f"""
+        <div style='display:flex;justify-content:center;align-items:center;gap:40px;margin:8px 0 12px 0;'>
+            {f"<img src='file://{logo_gs1}' style='height:80px;object-fit:contain;'/>" if logo_gs1 else ''}
+            <span style='font-size:36px;font-weight:800;'>Publicación GS1 → EDI</span>
+            {f"<img src='file://{logo_edi}' style='height:80px;object-fit:contain;'/>" if logo_edi else ''}
         </div>
         """,
         unsafe_allow_html=True
     )
-with col3:
-    if logo_edi:
-        st.image(logo_edi, width=120)
-
-if not (logo_gs1 and logo_edi):
-    st.info("No se encontraron uno o ambos logos. Asegurate de subirlos al repositorio en ./images o ./assets.")
+else:
+    st.markdown(
+        """
+        <div style='display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;'>
+          <span style='font-size:36px;font-weight:800;'>Publicación GS1 → EDI</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- Contenedor para el semáforo (se llena más abajo) ---
 sem_container = st.container()
