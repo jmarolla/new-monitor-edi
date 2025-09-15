@@ -11,15 +11,21 @@ from datetime import datetime, timedelta
 # ==============================================
 st.set_page_config(page_title='Publicación GS1 → EDI', layout='wide')
 
-# ===== Título centrado =====
-st.markdown(
-    """
-    <div style="display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;">
-      <span style="font-size:36px;font-weight:800;">Publicación GS1 → EDI</span>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# ===== Logos y título centrado =====
+col1, col2, col3 = st.columns([1,2,1])
+with col1:
+    st.image("ICONOGS1.png", width=120)
+with col2:
+    st.markdown(
+        """
+        <div style="display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;">
+          <span style="font-size:36px;font-weight:800;">Publicación GS1 → EDI</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+with col3:
+    st.image("logo EDI.webp", width=120)
 
 # --- Contenedor para el semáforo (se llena más abajo) ---
 sem_container = st.container()
