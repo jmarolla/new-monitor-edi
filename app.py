@@ -1,4 +1,5 @@
 import os
+import re
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, text
@@ -14,13 +15,13 @@ st.set_page_config(page_title='Publicación GS1 → EDI', layout='wide')
 st.markdown(
     """
     <div style="display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;">
-      <span style="font-size:36px;font-weight:800;">Publicación GS1 → EDI</span>
+      <span style="font-size:26px;font-weight:800;">Publicación GS1 → EDI</span>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-# --- Reservamos un contenedor para el semáforo (se llena más abajo) ---
+# --- Contenedor para el semáforo (se llena más abajo) ---
 sem_container = st.container()
 
 # ===== CSS helpers =====
@@ -127,12 +128,12 @@ else:
             st.markdown(HIDE_SIDEBAR_CSS, unsafe_allow_html=True)
 
 # ==============================================
-# Filtros (van *debajo* del semáforo en la UI, pero se definen aquí)
+# Filtros (debajo del semáforo, pero se definen aquí)
 # ==============================================
 if 'page' not in st.session_state:
     st.session_state.page = 1
 
-filters_container = st.container()  # contenedor para ubicar filtros luego del semáforo
+filters_container = st.container()  # luego del semáforo
 
 with filters_container:
     ctrl_left, ctrl_mid, ctrl_right = st.columns([1,1,2])
@@ -202,7 +203,6 @@ with st.spinner('Cargando página de datos…'):
 # ==============================================
 # Semáforo (se imprime ARRIBA del bloque de filtros)
 # ==============================================
-# Reglas de críticos (ROJO)
 critical_pattern = r'(' \
                    r'Error al dar de alta la empresa' \
                    r'|Error en el alta de la empresa\.\s*-\s*Invalid argument supplied for foreach\(\)' \
@@ -285,23 +285,30 @@ with nav4:
         st.rerun()
 
 # ==============================================
-# Tabla
+# Tabla (filas completas coloreadas según semáforo)
 # ==============================================
 if not display_df.empty:
+    # Mostrar "MotivoRechazo" como "Respuestas"
     display_df = display_df.rename(columns={"MotivoRechazo": "Respuestas"})
     display_df['FechaAlta'] = pd.to_datetime(display_df['FechaAlta'], errors='coerce')
 
-    def highlight_respuesta(val):
-        if isinstance(val, str) and 'No existe el usuario, no se creo el usuario' in val:
-            return 'background-color: red; color: white;'
-        elif isinstance(val, str) and val.strip():
-            return 'background-color: #eaffea; color: black;'
-        else:
-            return ''
+    # Patrón crítico para filas (usar la columna ya renombrada)
+    crit_re = re.compile(critical_pattern, re.IGNORECASE)
 
-    styled_df = display_df[['Id','FechaAlta','Plataforma','CodEmpre','RazonSocial','CUIT','Respuestas']].style.applymap(
-        highlight_respuesta, subset=['Respuestas']
-    )
+    def row_style(row: pd.Series):
+        txt = str(row.get('Respuestas', '') or '')
+        if crit_re.search(txt):
+            # Fila crítica (ROJO)
+            return ['background-color: #ff4d4f; color: white;'] * len(row)
+        else:
+            # Fila OK/resto (VERDE)
+            return ['background-color: #eaffea; color: black;'] * len(row)
+
+    cols_show = ['Id','FechaAlta','Plataforma','CodEmpre','RazonSocial','CUIT','Respuestas']
+    # Asegurar que existan (por si la página vino vacía con columnas mínimas)
+    cols_show = [c for c in cols_show if c in display_df.columns]
+
+    styled_df = display_df[cols_show].style.apply(row_style, axis=1)
     st.dataframe(styled_df, use_container_width=True, hide_index=True)
 else:
     st.warning('No hay resultados para los filtros actuales.')
