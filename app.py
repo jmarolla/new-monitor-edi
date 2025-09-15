@@ -11,21 +11,49 @@ from datetime import datetime, timedelta
 # ==============================================
 st.set_page_config(page_title='Publicación GS1 → EDI', layout='wide')
 
-# ===== Logos y título centrado =====
+# ===== Utilidad para localizar assets (logos) =====
+from pathlib import Path
+
+ASSET_CANDIDATES = [
+    ".", "images", "static", "assets"
+]
+
+# Buscamos varias variantes de nombre por si el repo tiene guiones/espacios
+LOGO_GS1_NAMES = ["ICONOGS1.png", "iconogs1.png"]
+LOGO_EDI_NAMES = ["logo EDI.webp", "logo_EDI.webp", "logo-EDI.webp", "logo_edi.webp"]
+
+@st.cache_resource(show_spinner=False)
+def asset_path(possible_names):
+    for folder in ASSET_CANDIDATES:
+        for name in possible_names:
+            p = Path(folder) / name
+            if p.exists():
+                return str(p)
+    return None
+
+logo_gs1 = asset_path(LOGO_GS1_NAMES)
+logo_edi = asset_path(LOGO_EDI_NAMES)
+
+# ===== Logos + título centrado =====
 col1, col2, col3 = st.columns([1,2,1])
 with col1:
-    st.image("ICONOGS1.png", width=120)
+    if logo_gs1:
+        st.image(logo_gs1, width=120)
 with col2:
     st.markdown(
         """
-        <div style="display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;">
-          <span style="font-size:36px;font-weight:800;">Publicación GS1 → EDI</span>
+        <div style=\"display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;\">
+          <span style=\"font-size:36px;font-weight:800;\">Publicación GS1 → EDI</span>
         </div>
         """,
         unsafe_allow_html=True
     )
 with col3:
-    st.image("logo EDI.webp", width=120)
+    if logo_edi:
+        st.image(logo_edi, width=120)
+
+if not (logo_gs1 and logo_edi):
+    st.info("No se encontraron uno o ambos logos. Asegurate de subirlos al repositorio en ./images o ./assets.")
 
 # --- Contenedor para el semáforo (se llena más abajo) ---
 sem_container = st.container()
