@@ -55,9 +55,9 @@ if logo_gs1 or logo_edi:
     st.markdown(
         f"""
         <div style='display:flex;justify-content:center;align-items:center;gap:40px;margin:8px 0 12px 0;'>
-            {f"<img src='file://{logo_gs1}' style='height:80px;object-fit:contain;'/>" if logo_gs1 else ''}
+            {f"<img src='{logo_gs1}' style='height:80px;object-fit:contain;'/>" if logo_gs1 else ''}
             <span style='font-size:36px;font-weight:800;'>Publicación GS1 → EDI</span>
-            {f"<img src='file://{logo_edi}' style='height:80px;object-fit:contain;'/>" if logo_edi else ''}
+            {f"<img src='{logo_edi}' style='height:80px;object-fit:contain;'/>" if logo_edi else ''}
         </div>
         """,
         unsafe_allow_html=True
