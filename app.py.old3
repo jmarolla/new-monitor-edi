@@ -1,6 +1,5 @@
 import os
 import re
-import html
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, text
@@ -17,8 +16,9 @@ GS1_STYLE = """
 <style>
 :root { color-scheme: light dark; }
 
-/* Base (claro) */
+/* ----- Base (claro) ----- */
 body { background-color: #f5f5f5; color: #003366; }
+
 h1, h2, h3, h4, h5, h6 { color: #003366 !important; }
 
 [data-testid="stMetric"] {
@@ -31,19 +31,19 @@ h1, h2, h3, h4, h5, h6 { color: #003366 !important; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* Botones genéricos (Anterior, Siguiente, Ir) */
-.stButton > button {
+button[kind="primary"], .stButton > button[kind="primary"] {
   background-color: #FF6600 !important;
   color: #ffffff !important;
   border-radius: 12px !important;
   border: none !important;
   font-weight: 700 !important;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
-.stButton > button:disabled {
-  background-color: #ff9966 !important;
-  opacity: .6 !important;
-  cursor: not-allowed !important;
+
+button[kind="secondary"], .stButton > button[kind="secondary"] {
+  background-color: #003366 !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
 }
 
 /* Inputs en claro */
@@ -63,7 +63,7 @@ h1, h2, h3, h4, h5, h6 { color: #003366 !important; }
 
 hr { border: 1px solid #003366; }
 
-/* Login sidebar */
+/* ----- Login sidebar ----- */
 section[data-testid="stSidebar"] > div:first-child {
   background-color: #003366 !important;
   color: #ffffff !important;
@@ -74,51 +74,24 @@ section[data-testid="stSidebar"] label { color: #ffffff !important; font-weight:
 section[data-testid="stSidebar"] input { border-radius: 8px; border: 1px solid #FF6600; }
 section[data-testid="stSidebar"] button[kind="primary"] { background-color: #FF6600 !important; color: #ffffff !important; font-weight: 700 !important; }
 
-/* Tabla de acciones rápidas (copiar) */
-.gs1-actions table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 8px;
-}
-.gs1-actions th, .gs1-actions td {
-  padding: 10px 12px;
-  background: #ffffff;
-  color: #003366;
-  border: 1px solid #d9e1ec;
-}
-.gs1-actions th {
-  background: #003366;
-  color: #fff;
-  font-weight: 700;
-}
-.gs1-actions button {
-  background: #FF6600;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-left: 8px;
-}
-.gs1-actions button:hover { filter: brightness(1.05); }
-
-/* Dark mode */
+/* ----- Modo oscuro (prefiere) ----- */
 @media (prefers-color-scheme: dark) {
   body { background-color: #0b1220; color: #e2e8f0; }
   h1, h2, h3, h4, h5, h6 { color: #e2e8f0 !important; }
 
+  /* Controles de filtro: texto visible sobre fondo oscuro */
   .stSelectbox div[role="combobox"],
   .stNumberInput input,
   .stTextInput input,
   .stDateInput input {
-    background: #0f172a !important;
-    color: #e2e8f0 !important;
-    border: 1px solid #334155 !important;
+    background: #0f172a !important;      /* slate-900 */
+    color: #e2e8f0 !important;            /* slate-200 */
+    border: 1px solid #334155 !important; /* slate-600 */
   }
   .stNumberInput input::placeholder,
-  .stTextInput input::placeholder { color: #94a3b8 !important; }
+  .stTextInput input::placeholder { color: #94a3b8 !important; } /* slate-400 */
 
+  /* Dropdown del select */
   div[data-baseweb="popover"] [role="listbox"] {
     background: #0f172a !important;
     color: #e2e8f0 !important;
@@ -126,28 +99,40 @@ section[data-testid="stSidebar"] button[kind="primary"] { background-color: #FF6
   }
   div[data-baseweb="popover"] [role="option"] { color: #e2e8f0 !important; }
 
+  /* Captions y labels */
   .stCaption, .stMarkdown p, label, .stCheckbox label { color: #e2e8f0 !important; }
-  [data-testid="stMetric"] { border-color: #1e293b; color: #e2e8f0; background:#0b1220; }
 
-  .gs1-actions th, .gs1-actions td {
-    background: #0f172a;
-    color: #e2e8f0;
-    border-color: #334155;
-  }
+  /* Métricas acorde al dark */
+  [data-testid="stMetric"] { border-color: #1e293b; color: #e2e8f0; background:#0b1220; }
 }
 </style>
 """
 st.markdown(GS1_STYLE, unsafe_allow_html=True)
 
-# ===== Título centrado =====
-st.markdown(
-    """
-    <div style="display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;">
-      <span style="font-size:36px;font-weight:800;color:#003366;">Publicación GS1 → EDI</span>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# ===== Header con logo + título centrado =====
+# Para mostrar el logo:
+# - En Streamlit Cloud (secrets): LOGO_URL="https://ruta/tu_logo.png"
+# - En local (var de entorno):   GS1_LOGO_URL="https://ruta/tu_logo.png"
+LOGO_URL = st.secrets.get("LOGO_URL", os.environ.get("GS1_LOGO_URL", ""))
+if LOGO_URL:
+    st.markdown(
+        f"""
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;margin:10px 0 6px 0;gap:10px;">
+          <img src="{LOGO_URL}" alt="GS1" style="max-height:64px;object-fit:contain;"/>
+          <span style="font-size:36px;font-weight:800;color:#003366;">Publicación GS1 → EDI</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    st.markdown(
+        """
+        <div style="display:flex;align-items:center;justify-content:center;margin:8px 0 12px 0;">
+          <span style="font-size:36px;font-weight:800;color:#003366;">Publicación GS1 → EDI</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- Contenedor para el semáforo (se llena más abajo) ---
 sem_container = st.container()
@@ -209,6 +194,7 @@ def secrets_available():
 engine = None
 
 if secrets_available():
+    # Cloud: toma secrets y oculta sidebar
     server = st.secrets["DB_SERVER"]
     database = st.secrets["DB_NAME"]
     user = st.secrets["DB_USER"]
@@ -222,6 +208,7 @@ if secrets_available():
         st.error(f"No se pudo conectar con las credenciales de la nube: {e}")
         st.stop()
 else:
+    # Local: login con formulario (sin botón ojo) y ocultar luego
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
 
@@ -368,21 +355,8 @@ with sem_container:
         )
 
 # ==============================================
-# Métricas y toggles (mutua exclusión)
+# Métricas y toggles
 # ==============================================
-if "only_crit" not in st.session_state:
-    st.session_state.only_crit = False
-if "only_ok" not in st.session_state:
-    st.session_state.only_ok = False
-
-def _on_toggle_crit():
-    if st.session_state.only_crit:
-        st.session_state.only_ok = False
-
-def _on_toggle_ok():
-    if st.session_state.only_ok:
-        st.session_state.only_crit = False
-
 m1, m2, m3, m4 = st.columns(4)
 with m1: st.metric('Total últimos 30 días', total)
 with m2: st.metric('Página', page)
@@ -391,26 +365,15 @@ with m4: st.metric('Plataforma', plataforma_sel)
 
 f1, f2 = st.columns(2)
 with f1:
-    st.checkbox(
-        "Ver SOLO errores críticos (rojo)",
-        key="only_crit",
-        value=st.session_state.only_crit,
-        disabled=st.session_state.only_ok,
-        on_change=_on_toggle_crit
-    )
+    show_only_crit = st.checkbox("Ver SOLO errores críticos (rojo)", value=False)
 with f2:
-    st.checkbox(
-        "Ver SOLO OK (verde)",
-        key="only_ok",
-        value=st.session_state.only_ok,
-        disabled=st.session_state.only_crit,
-        on_change=_on_toggle_ok
-    )
+    show_only_ok = st.checkbox("Ver SOLO OK (verde)", value=False)
 
-# Filtrado según selección exclusiva
-if st.session_state.only_crit:
+if show_only_crit and show_only_ok:
+    display_df = df
+elif show_only_crit:
     display_df = df[crit_mask]
-elif st.session_state.only_ok:
+elif show_only_ok:
     display_df = df[~crit_mask]
 else:
     display_df = df
@@ -435,69 +398,33 @@ with nav4:
         st.rerun()
 
 # ==============================================
-# Tabla principal (filas coloreadas)
+# Tabla (filas completas coloreadas según semáforo)
 # ==============================================
 if not display_df.empty:
+    # Mostrar "MotivoRechazo" como "Respuestas"
     display_df = display_df.rename(columns={"MotivoRechazo": "Respuestas"})
     display_df['FechaAlta'] = pd.to_datetime(display_df['FechaAlta'], errors='coerce')
 
+    # Patrón crítico para filas (usar la columna ya renombrada)
     crit_re = re.compile(critical_pattern, re.IGNORECASE)
+
     def row_style(row: pd.Series):
         txt = str(row.get('Respuestas', '') or '')
         if crit_re.search(txt):
+            # Fila crítica (ROJO)
             return ['background-color: #ff4d4f; color: white;'] * len(row)
         else:
+            # Fila OK/resto (VERDE)
             return ['background-color: #eaffea; color: black;'] * len(row)
 
     cols_show = ['Id','FechaAlta','Plataforma','CodEmpre','RazonSocial','CUIT','Respuestas']
+    # Asegurar que existan (por si la página vino vacía con columnas mínimas)
     cols_show = [c for c in cols_show if c in display_df.columns]
 
     styled_df = display_df[cols_show].style.apply(row_style, axis=1)
     st.dataframe(styled_df, use_container_width=True, hide_index=True)
 else:
     st.warning('No hay resultados para los filtros actuales.')
-
-st.markdown('---')
-
-# ==============================================
-# Tabla de acciones rápidas: Copiar CodEmpre / CUIT / Respuestas
-# ==============================================
-if not display_df.empty:
-    mini = display_df[['CodEmpre','CUIT','Respuestas']].fillna('')
-    # Construimos tabla HTML con botones de copiar (clipboard)
-    rows_html = []
-    for idx, r in mini.iterrows():
-        cod = str(r.get('CodEmpre', ''))
-        cuit = str(r.get('CUIT', ''))
-        resp = str(r.get('Respuestas', ''))
-
-        cod_js = html.escape(cod, quote=True)
-        cuit_js = html.escape(cuit, quote=True)
-        resp_js = html.escape(resp, quote=True)
-
-        row = f"""
-        <tr>
-          <td>{html.escape(cod)} <button onclick="navigator.clipboard.writeText('{cod_js}')">Copiar</button></td>
-          <td>{html.escape(cuit)} <button onclick="navigator.clipboard.writeText('{cuit_js}')">Copiar</button></td>
-          <td style="max-width:700px;overflow-wrap:anywhere;">{html.escape(resp)} <button onclick="navigator.clipboard.writeText('{resp_js}')">Copiar</button></td>
-        </tr>
-        """
-        rows_html.append(row)
-
-    table_html = f"""
-    <div class="gs1-actions">
-      <h4 style="margin:6px 0 10px 0;">Acciones rápidas (copiar)</h4>
-      <table>
-        <thead>
-          <tr><th>CodEmpre</th><th>CUIT</th><th>Respuestas</th></tr>
-        </thead>
-        <tbody>
-          {''.join(rows_html)}
-        </tbody>
-      </table>
-    </div>
-    """
-    st.markdown(table_html, unsafe_allow_html=True)
 
 st.markdown('---')
 
