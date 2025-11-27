@@ -135,8 +135,8 @@ def monitor_ui():
     with c1:
         page_size = st.selectbox("Filas por página", [50,100,200,500], index=1)
     with c2:
-        plataformas = ['(todas)','EDI','AltaEmpresa','BajaEmpresa','AltaUsuario']
-        plataforma  = st.selectbox("Plataforma", plataformas, index=plataformas.index('EDI') if 'EDI' in plataformas else 0)
+        plataformas = ['EDI']
+        plataforma_sel = st.selectbox('Plataforma (server-side)', plataformas, index=0)
     with c3:
         st.caption("Consulta limitada a los últimos 30 días (server-side).")
 
